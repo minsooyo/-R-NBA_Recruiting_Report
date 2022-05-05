@@ -1,0 +1,311 @@
+---
+title: "5 Best start player report for Chicago Bulls in 19-20 season"
+author: "Recuriting Expert Minsoo Seok"
+date: '2022-05-08'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+<style type="text/css">
+
+h1.title {
+  font-size: 38px;
+  color: DarkRed;
+  text-align: center;
+}
+h4.author { /* Header 4 - and the author and data headers use this too  */
+    font-size: 18px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkRed;
+  text-align: center;
+}
+h4.date { /* Header 4 - and the author and data headers use this too  */
+  font-size: 18px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkBlue;
+  text-align: center;
+}
+</style>
+
+# 1. Introduction
+A) In the NBA, each team can play a maximum number of five players on the court. If a team breaks this main rule, they will lose possession of the ball.(MasterClass ,2022)  The 5 positions in basketball are shooting guard, point guard, power forward, small forward, and center.In order to win the game, a team must score more field goals than the other team. A field goal refers to any basket a player scores during game play. Field goals can be worth two or three points.(Adams,2021)
+
+B) It is undeniable that if you have more budget to pay players in your team, your team would have better players. It leads to more win.
+(Chicago Bulls placed 27th out of 30 based on win-loss record in 18-19 season. The budget for next season is $118 million which ranked 26th out of 30 teams in NBA. The team with the highest payroll budget is Porland with $148 million, while the best performing team was Milwaukee Bucks with $131 million.) However, sometimes less payroll team could do better performance over whole season. That is why general manager is important to recruit cost-effective players.
+
+C) As a recruiting expert of Chicago Bulls, I am charged of finding the best find starting players in each position. Of course, The budget is limited. I will find the best cost-effective starting players using my data analysis skill.Considering diverse variables, he standard would be different depends on general manager of team, The budget for 5 starting player will not exceed  40% of next season budget which is 47.2 million. 
+
+D) NBA is the one of the most popular league in the world at the moment. The NBA makes money from many different sources primarily through television, merchandising, sponsorships, and tickets. That is why they can spend lots of money on players. However, losing fan due to their performance impacts their revenue in many different ways. In fact, Recruiting great players within budget and win the games is the best way to keep their profits.(Wertheim,2022)
+
+
+# 2. Reading and cleaning the raw data
+
+### Set Working directory
+```{r warning=FALSE,message=FALSE}
+setwd("~/Desktop/sport/Rawdata")
+```
+
+
+### loading Packages used for project
+```{r warning=FALSE, message=FALSE,results="hide"}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(tidyverse)
+library(broom)
+library(ggcorrplot)
+```
+
+### Dataset used for project
+```{r  warning=FALSE,message=FALSE, results="hide"}
+team_payroll <- read.csv("~/Desktop/sport/Rawdata/2019-20_nba_team-payroll.csv")
+team_statistics1 <- read.csv("~/Desktop/sport/Rawdata/2018-19_nba_team-statistics_1.csv")
+team_statistics2 <- read.csv("~/Desktop/sport/Rawdata/2018-19_nba_team-statistics_2.csv")
+team_player_statistics <- read.csv("~/Desktop/sport/Rawdata/2018-19_nba_player-statistics.csv")
+team_player_salaries <- read.csv("~/Desktop/sport/Rawdata/2018-19_nba_player-salaries.csv")
+```
+
+Dataset team_statistics1 1,2 and payroll will be references.
+team_player_statistics and team_player_salaries are main dataset I need to take a look at.
+
+# 3. Exploratory analysis 
+## A) Checking for errors and missing values within the datasets
+### Checking NA values in dataset
+```{r warning=FALSE,message=FALSE,results="hide"}
+sum(is.na(team_payroll)) #0
+sum(is.na(team_statistics1)) #90 
+sum(is.na(team_statistics2)) #0
+sum(is.na(team_player_statistics)) #117
+sum(is.na(team_player_salaries)) #0
+
+
+colSums(is.na(team_statistics1)) #X /X.1/ X.2 Columns have na values.
+colSums(is.na(team_player_statistics))
+```
+
+### Remove meaningless NA values
+```{r warning=FALSE,message=FALSE}
+team_statistics1<- team_statistics1[, -c(23:25)]
+team_player_statistics<- na.omit(team_player_statistics) # plyaers who played less game removed
+```
+
+### Combine data
+```{r warning=FALSE,message=FALSE}
+player_data <- full_join(team_player_salaries, team_player_statistics)
+player_data<- na.omit(player_data)
+data <- player_data[!duplicated(player_data$player_id), ] # delete players are repeated
+sum(is.na(player_data)) #0
+```
+
+### saving cleaned data
+```{r warning=FALSE,message=FALSE}
+write.csv(data, "tidy.data.csv")
+```
+
+
+## B) Checking the distribution of variables
+###Corelationship between numeric variables
+```{r warning=FALSE,message=FALSE}
+numeric_data<- data %>% select(-c(player_id,player_name, Pos, Tm))
+ggcorrplot(cor(numeric_data))
+```
+The correlation heatmap can give us general ideas between numerical variables.
+Generally, Numeric variables are highly correlated with other variables.
+Espeically, the PTS(points) variables can be great standard to select players and it has positive relationship with other variables.
+
+
+### Salary distribution
+```{r warning=FALSE,message=FALSE}
+summary(data$salary)
+
+ggplot(data = player_data, aes(x = salary)) + 
+  geom_histogram(mapping=aes(y=..density..), bins=30 , col="black",fill="magenta") + 
+  geom_density(alpha=0.5,fill="dodgerblue")
+```
+
+Mean of salary is more than double of median. The distribution severly right skewed.
+It means that few players got very higher salaries compared to other players and most players got less than mean salary.
+
+### Rleationship between points(PTS) and salary
+```{r warning=FALSE,message=FALSE}
+ggplot(data, aes(x= PTS, y=salary))+
+geom_point(size=0.5)+
+geom_smooth(method="lm", size=0.3,color="red")+
+ggtitle("Points X Salary")
+```
+There is positive relationship between points and salary to some degree. Generally, Players who get more points get more salary. PTS variable have to be included when we find 5 best players.
+
+
+
+## C) Checking for relationships between variables
+### Rleationship between poisition and salary
+```{r warning=FALSE,message=FALSE}
+mean_position<- data %>% group_by(Pos) %>% summarise(mean_Salary=mean(salary))
+
+ggplot(mean_position, aes(x= reorder(Pos, mean_Salary), y=mean_Salary, fill=mean_Salary))+
+geom_bar(stat="identity")+ggtitle("Position X Mean-salary")
+
+mean_position %>% mutate(Ratio = mean_Salary/sum(mean_Salary),
+                        budget = Ratio*47.2)
+```
+C > PG > SF > > PF > SG
+(Center > Point Guard > Small Foward > Power Forward > Shooting Guard)
+
+Generally, Salary of each position has a quite big difference. Every price is decided based on demand and supply. The budget should be different on each position. Considering many different variables, what we can spend on starting lineup is 47.2m which is 40% of next season budget. The budget is assigned to the each position(C - 12.1M / PF - 8.64M / PG - 9.74M / SF - 8.95M / SG-7.81M)
+
+### Relationship Age and points
+```{r warning=FALSE,message=FALSE}
+ggplot(data, aes(x=Age, y=PTS))+
+  geom_point()
+```
+
+### Relationship Games and points
+```{r warning=FALSE,message=FALSE}
+ggplot(data, aes(x=G, y=PTS))+
+  geom_point()
+```
+Most of High points players played many games but some players who played many games got similar or lower points with player who played less game. It does not have clear relationship.
+
+
+## D) Justification for decision made about data modelling
+### Upgrading PTS variable depends on how many matches player played and Age
+```{r warning=FALSE,message=FALSE}
+data_newpoints<- data %>% mutate(Points = PTS+(5*G) -(10*Age))
+
+###Relationship Games and new points
+ggplot(data_newpoints, aes(x=G, y=Points))+
+  geom_point()
+
+ggplot(data_newpoints, aes(x=Age, y=Points))+
+  geom_point()
+```
+For Game variable, it is very important variable because it shows How many matches the players play in the season. It can tell how durable they are and attitude to prepare each game. Therefore, we decide to give 5 extra point per one game they played.
+The relation between Games and points become clearer giving them extra 5 points per game. It is way more positive. How many games they have played in a season cannot be ignored for athlete.
+
+For Age variable, even though two players got same point overall season, potentially, younger player have more chance to upgrade or develope their performance. Therefore, if two players got same points and salary, picking younger players will be more helpful to team in the future. Therefore, age also should be considered, Age*10 will be deducted from points so older player will get less points if the performance was same with younger player.
+
+
+# 4. Data modelling and results
+## A) Data modelling
+### Can PTS(points) reflect performance of player well?
+```{r warning=FALSE,message=FALSE}
+#select the variables to be used for modeling
+select_data<- data %>% 
+  select(c(Age, G, GS, MP, FG, FGA, FT, FTA, DRB, TRB, TOV, PTS))
+
+model1<- lm(PTS ~.,data=select_data)
+
+
+select_data2<-data_newpoints %>% 
+  select(c(Age, G, MP, FG, FGA, FT, FTA, DRB, TRB, TOV, Points))
+
+model2<- lm(Points ~.,data=select_data2)
+
+
+```
+
+
+## B) Assumption Checking & Model output and interpretation of your model
+```{r warning=FALSE,message=FALSE}
+
+summary(model1)
+tidy(model1, conf.int = T)
+
+
+summary(model2)
+tidy(model2, conf.int = T)
+```
+For model1, The PTS variable can be a great standard of selecting players. It represent performance of each players well. It is highly correlated with almost every statistics except for "G", "GS", and "TOV". The model 1 can be upgraded more to model2.
+
+As we discussed before, Two variables (G, Age) which did not impact on points was well applied by multiplying their value and add or deduct to points. Therefore, we have two more standard to pick great 5players with points. 
+
+Model1 R-squared: 0.9978
+Model2 R-squared: 0.9985
+
+
+R-squared values range from 0 to 1 and are commonly stated as percentages from 0% to 100%. An R-squared of 100% means that all movements of a security (or another dependent variable) are completely explained by movements in the index(Fernando, 2022).
+
+The R-squared proved that the new variable "Points" is very great to explain players' performance. We will use "Points" variable to select best 5 players in 19-20 season.
+
+# Player Recommendations
+### Extract name of player, salary, position and point valriable applied every aspect
+```{r warning=FALSE,message=FALSE}
+final_data<- data_newpoints %>% 
+  select(player_name, salary, Pos, Points) %>% 
+  arrange(-Points)
+```
+budget(C - 12.1M / PF - 8.64M / PG - 9.74M / SF - 8.95M / SG-7.81M)
+
+### TOP 3 Best player each poisition within budget
+```{r warning=FALSE,message=FALSE}
+#Center Player(>12.1M)
+final_data %>% 
+  filter(Pos =="C") %>%
+  filter(salary <= 12100000) %>% 
+  slice(1:3)
+
+
+#Power Forward player (>8.64M)
+final_data %>% 
+  filter(Pos =="PF") %>%
+  filter(salary <= 8640000) %>% 
+   slice(1:3)
+
+
+#Point Guard player(>9.74M)
+final_data %>% 
+  filter(Pos =="PG") %>%
+  filter(salary <= 9740000) %>% 
+   slice(1:3)
+
+
+#Small Forward player (>8.95M)
+final_data %>% 
+  filter(Pos =="SF") %>%
+  filter(salary <= 8950000) %>% 
+   slice(1:3)
+
+
+#Shooting Guard player (>7.81M)
+final_data %>% 
+  filter(Pos =="SG") %>%
+  filter(salary <= 7810000) %>% 
+   slice(1:3)
+
+```
+Best 3 players selected in each position for plan B, plan C when plan A does not work.
+When we set up maximum budget for 5 star player 40% of season budget, we use less than 25% of season budget since we can save lots of money from PF position. We understand if we exceed maximum of PF position, we can get better player, However, we will stick to the original maximum budget since we believe it is not worth it to pay more money on other player. 
+
+
+# 6.Summary
+The best 5 start players and salary 18-19 seasons are:
+Center -> Karl-Anthony Towns (7839435)
+Power forward -> Pascal Siakam (1544951)
+Point Guard -> D'Angelo Russell (7019698)
+Small Forward -> Jayson Tatum (6700800)
+Shooting Guard -> Donovan Mitchell (3111480)
+
+
+The 5 players got paid 18-19 season
+7839435+1544951+7019698+6700800+3111480 = $26,216,364(26.2m) in total.
+these players are the best cost-effectiveness players and will greatly help the team in many different ways!
+
+Their pay increases are inevitable and must recruit them by raising their wages from 20 percent to up to 50 percent. They deserve it.
+
+
+In this case, the total amount of money spent on 5 these players will be between 31.45m ~ 39.32m and it still does not exceed 40% of season budget in 19-20 season.
+
+We expect the best performance with these fantastic 5 players next season.
+
+
+# 7. Reference
+[1] MasterClass staff. Basketball rules explained: Inside 16 common rules - 2022 [Internet]. MasterClass. [cited 2022May2]. Available from: https://www.masterclass.com/articles/basketball-rules-explained 
+
+[2]Adams L. 2021/22 NBA roster counts [Internet]. Hoops Rumors. 2021 [cited 2022May3]. Available from: https://www.hoopsrumors.com/2021/08/2021-22-nba-roster-counts.html 
+
+[3]Wertheim J. How do NBA teams spend their money? [Internet]. Sports Illustrated. Sports Illustrated; 2018 [cited 2022May3]. Available from: https://www.si.com/nba/2018/09/21/nba-teams-revenue-spending-breakdown-small-large-market 
+
+[4]Fernando J. What is R-squared? [Internet]. Investopedia. Investopedia; 2022 [cited 2022May5]. Available from: https://www.investopedia.com/terms/r/r-squared.asp#:~:text=R%2Dsquared%20values%20range%20from,)%20you%20are%20interested%20in). 
+

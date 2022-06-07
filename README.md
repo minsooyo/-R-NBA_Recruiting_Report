@@ -1,3 +1,10 @@
+# -R-NBA_Recruiting_Report
+Pratice a multi regression process with program R as part of my class.
+
+Original work by Minsoo Seok
+
+
+
 Only a scientific and reasonable approach to selecting players can lead to a successful season. We will process and select the data from the previous season and recruit the best 5 start players for Chicago Bulls in 19-20 season.
 We will try to find the best standard to recruit players and prove why there are the best players with in out budget by using multiple linear regression skills.
 
